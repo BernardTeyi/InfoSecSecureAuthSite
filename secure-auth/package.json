@@ -1,0 +1,13 @@
+{
+  "name": "secure-auth",
+  "version": "1.1.0",
+  "description": "Login system: salted+peppered passwords, TOTP 2FA, role-based access, encrypted DB, auto-backup. Runs locally or on Vercel (with Redis).",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "restore": "node restore.js",
+    "gen-secrets": "node -e \"const c=require('crypto');console.log('PEPPER='+c.randomBytes(32).toString('hex'));console.log('DB_KEY='+c.randomBytes(32).toString('hex'))\""
+  },
+  "dependencies": { "express": "^4.19.2", "qrcode": "^1.5.3" },
+  "engines": { "node": ">=18" }
+}

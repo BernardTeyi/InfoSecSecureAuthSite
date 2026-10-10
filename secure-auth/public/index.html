@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SecureAuth</title>
+<style>
+:root{--bg:#0b1020;--card:#141a35;--card2:#1b2347;--line:#2c3563;--txt:#eef1ff;--mut:#9aa6d4;
+--pri:#6366f1;--pri2:#ec4899;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--cyan:#22d3ee;--r:14px}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;line-height:1.45}
+.bg{position:fixed;inset:0;overflow:hidden;z-index:-1}
+.blob{position:absolute;border-radius:50%;filter:blur(90px);opacity:.45;animation:float 18s ease-in-out infinite}
+.b1{width:420px;height:420px;background:#6366f1;top:-100px;left:-80px}
+.b2{width:380px;height:380px;background:#ec4899;bottom:-120px;right:-60px;animation-delay:-6s}
+.b3{width:300px;height:300px;background:#22d3ee;top:40%;left:55%;opacity:.25;animation-delay:-12s}
+@keyframes float{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(40px,-30px) scale(1.12)}}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes pop{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ---------- navbar ---------- */
+.nav{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:10px 20px;background:#0b1020cc;backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.brand{font-weight:800;font-size:1.15rem;cursor:pointer;display:flex;align-items:center;gap:8px}
+.brand b{background:linear-gradient(90deg,var(--pri),var(--pri2));-webkit-background-clip:text;background-clip:text;color:transparent}
+#nav{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.nbtn{background:transparent;border:1px solid transparent;color:var(--mut);padding:8px 12px;border-radius:999px;cursor:pointer;font-size:.9rem;transition:.2s}
+.nbtn:hover{color:#fff;background:#ffffff14}
+.nbtn.active{color:#fff;background:linear-gradient(90deg,var(--pri),var(--pri2));box-shadow:0 4px 16px #6366f155}
+.who{display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--mut);margin-right:6px}
+
+/* ---------- layout ---------- */
+.wrap{max-width:1020px;margin:0 auto;padding:26px 16px 60px}
+section.view{display:none;animation:rise .45s ease both}
+section.view.on{display:block}
+.narrow{max-width:470px;margin:20px auto 0}
+.card{background:linear-gradient(160deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:var(--r);padding:22px;box-shadow:0 12px 40px #0006;margin-bottom:16px}
+h1{font-size:1.6rem;margin:0 0 4px} h2{font-size:1.15rem;margin:0 0 6px} h3{font-size:1rem;margin:0 0 6px}
+.sub{color:var(--mut);font-size:.92rem;margin:0 0 14px}
+.grad{background:linear-gradient(90deg,var(--cyan),var(--pri),var(--pri2));-webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* ---------- hint box ---------- */
+.hint{display:flex;gap:10px;background:#6366f11f;border:1px solid #6366f155;border-left:4px solid var(--pri);border-radius:10px;padding:10px 12px;font-size:.85rem;color:#d7dcff;margin:0 0 16px}
+.hint .ico{font-size:1.1rem}
+.hint b{color:#fff}
+.hint.good{background:#22c55e1c;border-color:#22c55e55;border-left-color:var(--ok)}
+.hint.warn{background:#f59e0b1c;border-color:#f59e0b55;border-left-color:var(--warn)}
+
+/* ---------- steps ---------- */
+.steps{display:flex;gap:6px;margin:0 0 18px}
+.step{flex:1;text-align:center;font-size:.72rem;color:var(--mut)}
+.step .dot{display:grid;place-items:center;width:28px;height:28px;margin:0 auto 4px;border-radius:50%;background:#2c3563;font-weight:700;transition:.3s}
+.step.active .dot{background:linear-gradient(135deg,var(--pri),var(--pri2));color:#fff;box-shadow:0 0 0 4px #6366f144;animation:pop .4s}
+.step.done .dot{background:var(--ok);color:#fff}
+.step.active .lbl{color:#fff;font-weight:600}
+
+/* ---------- forms ---------- */
+label{display:block;font-size:.82rem;margin:12px 0 5px;color:#c9d0f5;font-weight:600}
+.field{position:relative}
+input,select{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:#0b1020;color:#fff;font-size:1rem;outline:none;transition:.2s}
+input:focus,select:focus{border-color:var(--pri);box-shadow:0 0 0 3px #6366f144}
+.eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:0;cursor:pointer;font-size:1.05rem;padding:6px;color:var(--mut)}
+.code{text-align:center;font-size:1.8rem;letter-spacing:.5em;font-weight:700;padding-left:.5em}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 16px;border:0;border-radius:10px;font-size:.95rem;font-weight:600;cursor:pointer;color:#fff;transition:.2s;background:#2c3563}
+.btn:hover{transform:translateY(-2px);filter:brightness(1.12)}
+.btn:disabled{opacity:.55;cursor:wait;transform:none}
+.btn.primary{background:linear-gradient(90deg,var(--pri),var(--pri2));box-shadow:0 6px 20px #6366f155}
+.btn.danger{background:linear-gradient(90deg,#dc2626,#f43f5e)}
+.btn.ok{background:linear-gradient(90deg,#16a34a,#22c55e)}
+.btn.block{width:100%;margin-top:16px}
+.btn.sm{padding:6px 10px;font-size:.78rem;border-radius:8px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row.between{justify-content:space-between}
+.links{text-align:center;margin-top:14px;font-size:.88rem;color:var(--mut)}
+.links a{color:var(--cyan);cursor:pointer;font-weight:600;text-decoration:none}
+.links a:hover{text-decoration:underline}
+
+/* ---------- password helper ---------- */
+.bar{height:6px;border-radius:99px;background:#2c3563;margin-top:8px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;transition:.3s}
+.rules{list-style:none;padding:0;margin:8px 0 0;display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;font-size:.78rem;color:var(--mut)}
+.rules li.ok{color:var(--ok)}
+
+/* ---------- QR ---------- */
+.qr{display:block;margin:6px auto;background:#fff;padding:10px;border-radius:12px;width:210px;height:210px}
+code{background:#0b1020;border:1px dashed var(--line);padding:3px 8px;border-radius:6px;word-break:break-all;font-size:.82rem;color:var(--cyan)}
+.timer{height:5px;background:#2c3563;border-radius:99px;overflow:hidden;margin-top:10px}
+.timer i{display:block;height:100%;background:linear-gradient(90deg,var(--cyan),var(--pri));transition:width 1s linear}
+
+/* ---------- badges / avatars ---------- */
+.badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.72rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.badge.admin{background:linear-gradient(90deg,#7c3aed,#ec4899)}
+.badge.user{background:linear-gradient(90deg,#0891b2,#22d3ee);color:#042f3a}
+.chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.72rem;font-weight:600}
+.chip.g{background:#22c55e26;color:#4ade80}.chip.r{background:#ef444426;color:#f87171}.chip.y{background:#f59e0b26;color:#fbbf24}.chip.n{background:#64748b33;color:#cbd5e1}
+.avatar{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;font-weight:800;color:#fff;flex:none}
+
+/* ---------- dashboard ---------- */
+.hero{background:linear-gradient(120deg,#4f46e5,#9333ea 55%,#ec4899);border:0;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;right:-40px;top:-40px;width:200px;height:200px;border-radius:50%;background:#ffffff1f}
+.hero .sub{color:#f1ecff}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.tile{background:#0b102066;border:1px solid var(--line);border-radius:12px;padding:16px;cursor:pointer;transition:.25s;text-align:left;color:var(--txt);font:inherit}
+.tile:hover{transform:translateY(-4px);border-color:var(--pri);box-shadow:0 10px 30px #6366f133}
+.tile .big{font-size:1.7rem}
+.tile p{margin:4px 0 0;font-size:.82rem;color:var(--mut)}
+.stat{background:#0b102066;border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.stat b{display:block;font-size:1.7rem;line-height:1.1}
+.stat span{font-size:.78rem;color:var(--mut)}
+.stat.c1 b{color:var(--cyan)}.stat.c2 b{color:#c084fc}.stat.c3 b{color:var(--ok)}.stat.c4 b{color:var(--warn)}.stat.c5 b{color:var(--bad)}
+
+/* ---------- tables ---------- */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);text-align:left;padding:8px}
+td{padding:10px 8px;border-top:1px solid var(--line);vertical-align:middle}
+tr:hover td{background:#ffffff08}
+.name{display:flex;align-items:center;gap:10px;font-weight:600}
+td select{width:auto;padding:6px 8px;font-size:.85rem}
+.acts{display:flex;gap:6px;flex-wrap:wrap}
+details{margin-top:6px}
+summary{cursor:pointer;color:var(--cyan);font-weight:600;font-size:.9rem}
+.matrix td,.matrix th{text-align:center}.matrix td:first-child,.matrix th:first-child{text-align:left}
+.yes{color:var(--ok);font-weight:800}.no{color:#64748b}
+
+/* ---------- audit ---------- */
+.log{max-height:380px;overflow:auto;border:1px solid var(--line);border-radius:10px}
+.ev{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);font-size:.82rem}
+.ev:last-child{border:0}
+.ev time{color:var(--mut);font-variant-numeric:tabular-nums;min-width:62px}
+.ev .tag{padding:2px 8px;border-radius:6px;font-weight:700;font-size:.72rem}
+.ev.g .tag{background:#22c55e26;color:#4ade80}.ev.r .tag{background:#ef444426;color:#f87171}.ev.y .tag{background:#f59e0b26;color:#fbbf24}.ev.b .tag{background:#6366f126;color:#a5b4fc}
+
+/* ---------- toasts + modal ---------- */
+#toasts{position:fixed;top:70px;right:14px;z-index:60;display:flex;flex-direction:column;gap:8px;max-width:min(360px,92vw)}
+.toast{padding:11px 14px;border-radius:10px;font-size:.9rem;font-weight:500;box-shadow:0 8px 24px #0008;animation:rise .3s ease;border-left:5px solid}
+.toast.ok{background:#052e16;border-color:var(--ok)}.toast.bad{background:#3b0a0a;border-color:var(--bad)}.toast.info{background:#1e1b4b;border-color:var(--pri)}
+.modal{position:fixed;inset:0;background:#000a;z-index:70;display:grid;place-items:center;padding:16px;backdrop-filter:blur(4px)}
+.modal.hidden,.hidden{display:none}
+.mbox{background:var(--card2);border:1px solid var(--line);border-radius:var(--r);padding:22px;max-width:420px;width:100%;animation:pop .25s}
+.foot{text-align:center;color:var(--mut);font-size:.75rem;margin-top:24px}
+</style>
+</head>
+<body>
+<div class="bg"><span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span></div>
+
+<header class="nav">
+  <div class="brand" id="brand">🛡️ <span>Secure<b>Auth</b></span></div>
+  <nav id="nav"></nav>
+</header>
+
+<main class="wrap">
+
+  <!-- ===================== LOGIN ===================== -->
+  <section class="view narrow" id="v-login">
+    <div class="card">
+      <div class="steps" id="s-login"></div>
+      <h1>Welcome back 👋</h1>
+      <p class="sub">Log in to your account.</p>
+      <div class="hint good hidden" id="login-note"><span class="ico">✅</span><div><b>Two-factor is now active.</b> Log in below to finish. You will be asked for a code from your app.</div></div>
+      <div class="hint"><span class="ico">💡</span><div><b>What's happening:</b> step 1 of 2. Enter your username and password.<br><b>Next:</b> you'll type a 6-digit code from your authenticator app.</div></div>
+      <label for="l-user">Username</label>
+      <input id="l-user" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="your_username">
+      <label for="l-pass">Password</label>
+      <div class="field"><input id="l-pass" type="password" autocomplete="current-password" placeholder="••••••••••"><button class="eye" type="button" data-eye="l-pass" title="Show / hide">👁️</button></div>
+      <button class="btn primary block" id="b-login">Continue →</button>
+      <div class="links">New here? <a data-go="register">Create an account</a></div>
+    </div>
+  </section>
+
+  <!-- ===================== REGISTER ===================== -->
+  <section class="view narrow" id="v-register">
+    <div class="card">
+      <div class="steps" id="s-register"></div>
+      <h1>Create your account ✨</h1>
+      <p class="sub">It takes about a minute.</p>
+      <div class="hint"><span class="ico">💡</span><div><b>What's happening:</b> you choose a username and a strong password. Your password is salted, peppered and hashed, so it is never stored as text.<br><b>Next:</b> you'll scan a QR code to turn on two-factor protection.<br><small>The very first account on a new system becomes the administrator.</small></div></div>
+      <label for="r-user">Username <small style="font-weight:400;color:var(--mut)">(3-20 letters, numbers or _)</small></label>
+      <input id="r-user" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="choose_a_name" maxlength="20">
+      <label for="r-pass">Password</label>
+      <div class="field"><input id="r-pass" type="password" autocomplete="new-password" placeholder="Make it long and unique"><button class="eye" type="button" data-eye="r-pass" title="Show / hide">👁️</button></div>
+      <div class="bar"><i id="r-bar"></i></div>
+      <ul class="rules" id="r-rules"></ul>
+      <button class="btn primary block" id="b-register">Create account →</button>
+      <div class="links">Already registered? <a data-go="login">Log in</a></div>
+    </div>
+  </section>
+
+  <!-- ===================== 2FA ENROL ===================== -->
+  <section class="view narrow" id="v-enroll">
+    <div class="card">
+      <div class="steps" id="s-enroll"></div>
+      <h1>Set up two-factor 📱</h1>
+      <p class="sub">An extra lock on your account.</p>
+      <div class="hint"><span class="ico">💡</span><div><b>Do this now:</b><br>1. Open Google Authenticator, Microsoft Authenticator or Authy.<br>2. Tap <b>+</b> and scan the QR code below.<br>3. Type the 6-digit number it shows, then press Activate.</div></div>
+      <img id="qr" class="qr" alt="QR code to scan with your authenticator app">
+      <p class="sub" style="text-align:center;margin-top:10px">Can't scan? Enter this key by hand:<br><code id="secret"></code> <button class="btn sm" id="b-copy" type="button">Copy</button></p>
+      <label for="e-code">6-digit code from your app</label>
+      <input id="e-code" class="code" inputmode="numeric" maxlength="6" placeholder="000000" autocomplete="one-time-code">
+      <button class="btn ok block" id="b-enroll">Activate two-factor ✓</button>
+      <div class="links"><a data-go="login">Cancel and go back</a></div>
+    </div>
+  </section>
+
+  <!-- ===================== 2FA LOGIN ===================== -->
+  <section class="view narrow" id="v-twofa">
+    <div class="card">
+      <div class="steps" id="s-twofa"></div>
+      <h1>Enter your code 🔐</h1>
+      <p class="sub">Almost there.</p>
+      <div class="hint"><span class="ico">💡</span><div><b>What's happening:</b> your password was correct. Now we check it's really you.<br><b>Next:</b> open your authenticator app and type the current 6-digit code. A code can only be used once.</div></div>
+      <input id="t-code" class="code" inputmode="numeric" maxlength="6" placeholder="000000" autocomplete="one-time-code">
+      <div class="timer"><i id="t-bar" style="width:100%"></i></div>
+      <p class="sub" style="margin:6px 0 0;text-align:center;font-size:.8rem" id="t-left">Codes refresh every 30 seconds</p>
+      <button class="btn primary block" id="b-2fa">Verify and log in →</button>
+      <div class="links"><a data-go="login">← Back to password</a></div>
+    </div>
+  </section>
+
+  <!-- ===================== DASHBOARD ===================== -->
+  <section class="view" id="v-dashboard">
+    <div class="card hero">
+      <div class="row between">
+        <div><h1>Hello, <span id="d-name"></span> 🎉</h1><p class="sub" id="d-area" style="margin:0">Loading your area…</p></div>
+        <span class="badge" id="d-role"></span>
+      </div>
+    </div>
+    <div class="hint" id="d-hint"></div>
+    <div class="card hidden" id="d-stats-card">
+      <h2>System at a glance</h2>
+      <p class="sub">Live numbers, visible to admins only.</p>
+      <div class="grid" id="d-stats"></div>
+    </div>
+    <div class="card">
+      <h2>Where to next?</h2>
+      <p class="sub">Tap a tile to jump there.</p>
+      <div class="grid" id="d-tiles"></div>
+    </div>
+  </section>
+
+  <!-- ===================== ACCOUNT ===================== -->
+  <section class="view" id="v-account">
+    <div class="grid" style="align-items:start">
+      <div class="card">
+        <h2>👤 My account</h2>
+        <p class="sub">Your details and security status.</p>
+        <div class="row" style="margin-bottom:12px"><span class="avatar" id="a-avatar" style="width:52px;height:52px;font-size:1.3rem"></span><div><b id="a-name" style="font-size:1.1rem"></b><br><span class="badge" id="a-role"></span></div></div>
+        <table><tbody id="a-info"></tbody></table>
+      </div>
+      <div class="card">
+        <h2>🔑 Change password</h2>
+        <p class="sub">After changing it, every other device is signed out.</p>
+        <div class="hint warn"><span class="ico">⚠️</span><div><b>Tip:</b> use a password you don't use anywhere else. A short passphrase with symbols works well.</div></div>
+        <label for="p-old">Current password</label><input id="p-old" type="password" autocomplete="current-password">
+        <label for="p-new">New password</label><input id="p-new" type="password" autocomplete="new-password">
+        <div class="bar"><i id="p-bar"></i></div><ul class="rules" id="p-rules"></ul>
+        <button class="btn primary block" id="b-pass">Update password</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== USERS (admin) ===================== -->
+  <section class="view" id="v-users">
+    <div class="card">
+      <div class="row between"><div><h1>👥 User management</h1><p class="sub" style="margin:0">Change roles, unlock accounts, reset 2FA or remove users.</p></div>
+        <input id="u-search" placeholder="🔍 Search username" style="max-width:240px"></div>
+    </div>
+    <div class="hint"><span class="ico">💡</span><div><b>How this works:</b> change a role with the dropdown and it takes effect straight away, with no need for the user to log in again. <b>Reset 2FA</b> signs the user out and makes them set up a new authenticator at their next login. <b>Unlock</b> clears a lockout caused by too many wrong passwords. You can't change or delete your own account here, so there is always an admin left.</div></div>
+    <div class="card">
+      <div class="grid" id="u-stats" style="margin-bottom:14px"></div>
+      <div class="tw"><table>
+        <thead><tr><th>User</th><th>Role</th><th>2FA</th><th>Status</th><th>Last login</th><th>Actions</th></tr></thead>
+        <tbody id="u-body"></tbody>
+      </table></div>
+      <p class="sub" id="u-empty" style="display:none;margin-top:12px">No users match your search.</p>
+    </div>
+    <div class="card">
+      <details>
+        <summary>What can each role do?</summary>
+        <div class="tw" style="margin-top:10px"><table class="matrix">
+          <thead><tr><th>Capability</th><th><span class="badge user">user</span></th><th><span class="badge admin">admin</span></th></tr></thead>
+          <tbody id="u-matrix"></tbody>
+        </table></div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ===================== AUDIT (admin) ===================== -->
+  <section class="view" id="v-audit">
+    <div class="card">
+      <div class="row between"><div><h1>📜 Audit log &amp; backups</h1><p class="sub" style="margin:0">A tamper-evident record of what happened and when.</p></div>
+        <button class="btn primary" id="b-backup">💾 Back up now</button></div>
+    </div>
+    <div class="hint"><span class="ico">💡</span><div><b>What's happening:</b> every log entry is chained to the one before it with SHA-256. If anyone edits or deletes an entry, the chain breaks and the banner below turns red. Backups run automatically; this button makes one right now.</div></div>
+    <div class="card">
+      <div id="au-chain" class="hint good" style="margin-bottom:12px"></div>
+      <div class="log" id="au-list"></div>
+      <p class="sub" style="margin:10px 0 0">Showing the 50 most recent events.</p>
+    </div>
+  </section>
+
+  <p class="foot">SecureAuth · AES-256-GCM encrypted data · salted &amp; peppered passwords · TOTP two-factor</p>
+</main>
+
+<div id="toasts"></div>
+
+<div class="modal hidden" id="modal">
+  <div class="mbox">
+    <h2 id="m-title"></h2>
+    <p class="sub" id="m-text"></p>
+    <div class="row" style="justify-content:flex-end"><button class="btn" id="m-cancel">Cancel</button><button class="btn primary" id="m-ok">Confirm</button></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const VIEWS = ['login','register','enroll','twofa','dashboard','account','users','audit'];
+const AUTH = ['dashboard','account','users','audit'];
+const ADMIN = ['users','audit'];
+let me = null, pendingId = null, loginNote = false, timerId = null, usersCache = [];
+
+/* ---------- tiny helpers ---------- */
+function h(tag, attrs = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') e.className = v;
+    else if (k.startsWith('on')) e[k] = v;
+    else if (v !== false && v != null) e.setAttribute(k, v === true ? '' : v);
+  }
+  for (const c of kids.flat()) { if (c == null || c === false) continue; e.append(c.nodeType ? c : document.createTextNode(String(c))); }
+  return e;
+}
+const fmt = t => t ? new Date(t).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Never';
+const hue = s => [...s].reduce((a, c) => a + c.charCodeAt(0) * 7, 0) % 360;
+const avatar = (name, size) => h('span', { class: 'avatar', style: `background:hsl(${hue(name)} 65% 48%);${size ? `width:${size}px;height:${size}px;` : ''}` }, name[0].toUpperCase());
+const roleBadge = r => h('span', { class: 'badge ' + r }, r);
+
+function toast(msg, type = 'info') {
+  const t = h('div', { class: 'toast ' + type }, msg);
+  $('toasts').append(t); setTimeout(() => t.remove(), 4200);
+}
+function busy(btn, on) { btn.disabled = on; }
+async function api(url, method = 'GET', body) {
+  const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    if (r.status === 401 && me && url !== '/api/account/password' && url !== '/api/login' && url !== '/api/login/2fa') {
+      me = null; renderNav(); go('login'); toast('Your session ended. Please log in again.', 'info');
+    }
+    throw new Error(data.error || 'Something went wrong');
+  }
+  return data;
+}
+function confirmBox({ title, text, ok = 'Confirm', danger = false }) {
+  return new Promise(resolve => {
+    $('m-title').textContent = title; $('m-text').textContent = text;
+    $('m-ok').textContent = ok; $('m-ok').className = 'btn ' + (danger ? 'danger' : 'primary');
+    $('modal').classList.remove('hidden');
+    const done = v => { $('modal').classList.add('hidden'); $('m-ok').onclick = $('m-cancel').onclick = null; resolve(v); };
+    $('m-ok').onclick = () => done(true); $('m-cancel').onclick = () => done(false);
+  });
+}
+function steps(id, labels, active) {
+  $(id).replaceChildren(...labels.map((l, i) =>
+    h('div', { class: 'step ' + (i < active ? 'done' : i === active ? 'active' : '') },
+      h('span', { class: 'dot' }, i < active ? '✓' : String(i + 1)), h('span', { class: 'lbl' }, l))));
+}
+const RULES = [['10+ characters', p => p.length >= 10], ['Uppercase letter', p => /[A-Z]/.test(p)], ['Lowercase letter', p => /[a-z]/.test(p)], ['A number', p => /\d/.test(p)], ['A symbol (!@#…)', p => /[^A-Za-z0-9]/.test(p)]];
+function bindStrength(input, list, bar) {
+  const upd = () => {
+    const p = input.value, pass = RULES.map(([, f]) => f(p));
+    list.replaceChildren(...RULES.map(([l], i) => h('li', { class: pass[i] ? 'ok' : '' }, (pass[i] ? '✓ ' : '○ ') + l)));
+    const n = pass.filter(Boolean).length + (p.length >= 14 ? 1 : 0);
+    bar.style.width = (n / 6 * 100) + '%'; bar.style.background = n <= 2 ? 'var(--bad)' : n <= 4 ? 'var(--warn)' : 'var(--ok)';
+  };
+  input.addEventListener('input', upd); upd();
+}
+
+/* ---------- navigation ---------- */
+function go(view) { if (location.hash === '#' + view) render(view); else location.hash = view; }
+window.addEventListener('hashchange', () => render(location.hash.slice(1)));
+document.addEventListener('click', e => {
+  const g = e.target.closest('[data-go]'); if (g) { e.preventDefault(); go(g.dataset.go); }
+  const eye = e.target.closest('[data-eye]'); if (eye) { const i = $(eye.dataset.eye); i.type = i.type === 'password' ? 'text' : 'password'; }
+});
+$('brand').onclick = () => go(me ? 'dashboard' : 'login');
+
+function renderNav(active) {
+  const items = !me ? [['login', '🔓 Login'], ['register', '✨ Register']]
+    : [['dashboard', '🏠 Dashboard'], ...(me.role === 'admin' ? [['users', '👥 Users'], ['audit', '📜 Audit & backups']] : []), ['account', '👤 My account']];
+  const nodes = items.map(([v, l]) => h('button', { class: 'nbtn' + (v === active ? ' active' : ''), onclick: () => go(v) }, l));
+  if (me) nodes.unshift(h('span', { class: 'who' }, avatar(me.username, 26), me.username, roleBadge(me.role)));
+  if (me) nodes.push(h('button', { class: 'nbtn', onclick: logout }, '🚪 Log out'));
+  $('nav').replaceChildren(...nodes);
+}
+
+function render(view) {
+  if (!VIEWS.includes(view)) view = me ? 'dashboard' : 'login';
+  if (AUTH.includes(view) && !me) view = 'login';
+  if (ADMIN.includes(view) && me && me.role !== 'admin') { toast(`That page is for admins only. Your role is "${me.role}".`, 'bad'); view = 'dashboard'; }
+  if ((view === 'login' || view === 'register') && me) view = 'dashboard';
+  if ((view === 'enroll' || view === 'twofa') && !pendingId) view = 'login';
+  if (location.hash !== '#' + view) history.replaceState(null, '', '#' + view);
+  clearInterval(timerId);
+  document.querySelectorAll('section.view').forEach(s => s.classList.toggle('on', s.id === 'v-' + view));
+  renderNav(view); window.scrollTo({ top: 0 });
+  ({ login: showLogin, register: showRegister, enroll: showEnroll, twofa: showTwofa, dashboard: loadDashboard, account: loadAccount, users: loadUsers, audit: loadAudit })[view]();
+}
+
+/* ---------- auth screens ---------- */
+function showLogin() { steps('s-login', ['Password', 'Code', 'In!'], 0); $('login-note').classList.toggle('hidden', !loginNote); loginNote = false; setTimeout(() => $('l-user').focus(), 60); }
+function showRegister() { steps('s-register', ['Account', 'Scan QR', 'Confirm', 'Log in'], 0); }
+function showEnroll() { steps('s-enroll', ['Account', 'Scan QR', 'Confirm', 'Log in'], 1); setTimeout(() => $('e-code').focus(), 60); }
+function showTwofa() {
+  steps('s-twofa', ['Password', 'Code', 'In!'], 1); $('t-code').value = ''; setTimeout(() => $('t-code').focus(), 60);
+  const tick = () => { const left = 30 - Math.floor(Date.now() / 1000) % 30; $('t-bar').style.width = (left / 30 * 100) + '%'; $('t-left').textContent = `Current code changes in ${left}s`; };
+  tick(); timerId = setInterval(tick, 1000);
+}
+function startStep(d) {
+  pendingId = d.pendingId;
+  if (d.step === 'enroll') { $('qr').src = d.qr; $('secret').textContent = d.secret; $('e-code').value = ''; go('enroll'); toast('Scan the QR code to finish setting up.', 'info'); }
+  else { go('twofa'); toast('Password accepted. Now enter your code.', 'ok'); }
+}
+async function submit(btn, fn) { busy(btn, true); try { await fn(); } catch (e) { toast(e.message, 'bad'); } finally { busy(btn, false); } }
+
+$('b-login').onclick = () => submit($('b-login'), async () => { const d = await api('/api/login', 'POST', { username: $('l-user').value.trim(), password: $('l-pass').value }); $('l-pass').value = ''; startStep(d); });
+$('b-register').onclick = () => submit($('b-register'), async () => { const d = await api('/api/register', 'POST', { username: $('r-user').value.trim(), password: $('r-pass').value }); $('r-pass').value = ''; startStep(d); });
+$('b-enroll').onclick = () => submit($('b-enroll'), async () => { await api('/api/2fa/activate', 'POST', { pendingId, code: $('e-code').value }); pendingId = null; loginNote = true; go('login'); toast('Two-factor activated 🎉', 'ok'); });
+$('b-2fa').onclick = () => submit($('b-2fa'), async () => { await api('/api/login/2fa', 'POST', { pendingId, code: $('t-code').value }); pendingId = null; me = await api('/api/me'); toast(`Welcome, ${me.username}!`, 'ok'); go('dashboard'); });
+$('b-copy').onclick = () => { navigator.clipboard?.writeText($('secret').textContent).then(() => toast('Key copied', 'ok'), () => toast('Copy failed, select it manually', 'bad')); };
+$('b-pass').onclick = () => submit($('b-pass'), async () => { await api('/api/account/password', 'POST', { currentPassword: $('p-old').value, newPassword: $('p-new').value }); $('p-old').value = $('p-new').value = ''; $('p-new').dispatchEvent(new Event('input')); toast('Password updated. Other devices were signed out.', 'ok'); });
+for (const [id, btn] of [['l-user', 'b-login'], ['l-pass', 'b-login'], ['r-user', 'b-register'], ['r-pass', 'b-register'], ['e-code', 'b-enroll'], ['t-code', 'b-2fa'], ['p-new', 'b-pass']])
+  $(id).addEventListener('keydown', e => { if (e.key === 'Enter') $(btn).click(); });
+for (const id of ['e-code', 't-code']) $(id).addEventListener('input', e => { e.target.value = e.target.value.replace(/\D/g, ''); });
+bindStrength($('r-pass'), $('r-rules'), $('r-bar')); bindStrength($('p-new'), $('p-rules'), $('p-bar'));
+
+async function logout() { try { await api('/api/logout', 'POST'); } catch {} me = null; pendingId = null; go('login'); toast('You are logged out. See you soon!', 'info'); }
+
+/* ---------- dashboard ---------- */
+const statCards = users => [
+  ['c1', users.length, 'Total users'], ['c2', users.filter(u => u.role === 'admin').length, 'Admins'],
+  ['c3', users.filter(u => u.twoFactor).length, 'With 2FA on'], ['c4', users.filter(u => !u.twoFactor).length, 'Waiting for 2FA'], ['c5', users.filter(u => u.locked).length, 'Locked']
+].map(([c, n, l]) => h('div', { class: 'stat ' + c }, h('b', {}, n), h('span', {}, l)));
+
+async function loadDashboard() {
+  $('d-name').textContent = me.username; $('d-role').textContent = me.role; $('d-role').className = 'badge ' + me.role;
+  const admin = me.role === 'admin';
+  $('d-hint').replaceChildren(h('span', { class: 'ico' }, '💡'), h('div', {}, h('b', {}, 'What you can do as ' + (admin ? 'an admin' : 'a user') + ': '),
+    admin ? 'open the user area, manage every account (roles, 2FA resets, unlocks, removals), read the audit log and run backups. ' : 'open the user area and manage your own account and password. ',
+    h('b', {}, 'Next step: '), admin ? 'review your users, then check the audit log.' : 'visit "My account" to check your security status.'));
+  $('d-tiles').replaceChildren(
+    ...[['account', '👤', 'My account', 'Profile, security status and password']]
+      .concat(admin ? [['users', '👥', 'Manage users', 'Roles, 2FA resets, unlocks, deletions'], ['audit', '📜', 'Audit & backups', 'Tamper-proof history and backups']] : [])
+      .map(([v, i, t, d]) => h('button', { class: 'tile', onclick: () => go(v) }, h('div', { class: 'big' }, i), h('h3', {}, t), h('p', {}, d))));
+  $('d-stats-card').classList.toggle('hidden', !admin);
+  try { $('d-area').textContent = (await api('/api/user/area')).message; } catch (e) { $('d-area').textContent = e.message; }
+  if (admin) { try { $('d-stats').replaceChildren(...statCards(await api('/api/admin/users'))); } catch {} }
+}
+
+/* ---------- account ---------- */
+async function loadAccount() {
+  try { me = { ...me, ...(await api('/api/me')) }; } catch { return; }
+  $('a-avatar').replaceChildren(me.username[0].toUpperCase()); $('a-avatar').style.background = `hsl(${hue(me.username)} 65% 48%)`;
+  $('a-name').textContent = me.username; $('a-role').textContent = me.role; $('a-role').className = 'badge ' + me.role;
+  const row = (k, v) => h('tr', {}, h('td', { style: 'color:var(--mut)' }, k), h('td', {}, v));
+  $('a-info').replaceChildren(
+    row('Two-factor', h('span', { class: 'chip ' + (me.twoFactor ? 'g' : 'r') }, me.twoFactor ? 'Active' : 'Off')),
+    row('Member since', fmt(me.created)), row('Last login', fmt(me.lastLogin)),
+    row('Role', me.role === 'admin' ? 'Admin: full access' : 'User: standard access'));
+}
+
+/* ---------- users (admin) ---------- */
+const MATRIX = [['Log in with password + 2FA', 1, 1], ['Open the user area', 1, 1], ['Change own password', 1, 1], ['See the list of users', 0, 1], ['Change roles', 0, 1], ['Delete users', 0, 1], ['Reset 2FA and unlock accounts', 0, 1], ['Read the audit log and run backups', 0, 1]];
+$('u-matrix').replaceChildren(...MATRIX.map(([c, u, a]) => h('tr', {}, h('td', {}, c), h('td', { class: u ? 'yes' : 'no' }, u ? '✓' : '✕'), h('td', { class: a ? 'yes' : 'no' }, a ? '✓' : '✕'))));
+$('u-search').addEventListener('input', drawUsers);
+
+async function loadUsers() { try { usersCache = await api('/api/admin/users'); drawUsers(); } catch (e) { toast(e.message, 'bad'); } }
+async function act(fn, okMsg) { try { await fn(); toast(okMsg, 'ok'); } catch (e) { toast(e.message, 'bad'); } await loadUsers(); }
+
+function drawUsers() {
+  const q = $('u-search').value.trim().toLowerCase();
+  const rows = usersCache.filter(u => u.username.toLowerCase().includes(q));
+  $('u-stats').replaceChildren(...statCards(usersCache));
+  $('u-empty').style.display = rows.length ? 'none' : 'block';
+  $('u-body').replaceChildren(...rows.map(u => {
+    const self = u.id === me.id || u.username === me.username;
+    const sel = h('select', { disabled: self, title: self ? 'You cannot change your own role' : 'Change role' },
+      ['user', 'admin'].map(r => h('option', { value: r, selected: r === u.role }, r)));
+    sel.onchange = async () => {
+      const ok = await confirmBox({ title: `Make ${u.username} ${sel.value === 'admin' ? 'an admin' : 'a regular user'}?`,
+        text: sel.value === 'admin' ? 'Admins can manage users, reset 2FA, read the audit log and run backups.' : 'They will immediately lose all admin powers.', ok: 'Change role' });
+      if (ok) act(() => api(`/api/admin/users/${u.id}/role`, 'POST', { role: sel.value }), `${u.username} is now ${sel.value}`); else sel.value = u.role;
+    };
+    const actions = self ? h('span', { class: 'chip n' }, 'This is you') : h('div', { class: 'acts' },
+      u.locked && h('button', { class: 'btn sm ok', onclick: () => act(() => api(`/api/admin/users/${u.id}/unlock`, 'POST'), `${u.username} unlocked`) }, '🔓 Unlock'),
+      h('button', { class: 'btn sm', onclick: async () => { if (await confirmBox({ title: `Reset 2FA for ${u.username}?`, text: 'They will be signed out and must set up a new authenticator app at their next login.', ok: 'Reset 2FA' })) act(() => api(`/api/admin/users/${u.id}/reset-2fa`, 'POST'), `2FA reset for ${u.username}`); } }, '🔁 Reset 2FA'),
+      h('button', { class: 'btn sm danger', onclick: async () => { if (await confirmBox({ title: `Delete ${u.username}?`, text: 'This permanently removes the account and signs them out. It cannot be undone.', ok: 'Delete user', danger: true })) act(() => api(`/api/admin/users/${u.id}`, 'DELETE'), `${u.username} deleted`); } }, '🗑 Delete'));
+    return h('tr', {},
+      h('td', {}, h('div', { class: 'name' }, avatar(u.username), u.username)),
+      h('td', {}, sel),
+      h('td', {}, h('span', { class: 'chip ' + (u.twoFactor ? 'g' : 'y') }, u.twoFactor ? 'On' : 'Not set up')),
+      h('td', {}, h('span', { class: 'chip ' + (u.locked ? 'r' : 'g') }, u.locked ? 'Locked' : 'Active')),
+      h('td', { style: 'color:var(--mut);font-size:.8rem' }, fmt(u.lastLogin)),
+      h('td', {}, actions));
+  }));
+}
+
+/* ---------- audit (admin) ---------- */
+function evClass(e) {
+  if (/FAIL|DENIED|LOCKOUT|DELETE/.test(e)) return 'r';
+  if (/OK|REGISTER|ENABLED|UNLOCK/.test(e)) return 'g';
+  if (/ROLE|RESET|BACKUP|PASSWORD/.test(e)) return 'y';
+  return 'b';
+}
+async function loadAudit() {
+  try {
+    const a = await api('/api/admin/audit');
+    $('au-chain').className = 'hint ' + (a.chainIntact ? 'good' : 'warn'); $('au-chain').style.borderLeftColor = a.chainIntact ? '' : 'var(--bad)';
+    $('au-chain').replaceChildren(h('span', { class: 'ico' }, a.chainIntact ? '✅' : '🚨'), h('div', {}, a.chainIntact ? h('b', {}, 'Log integrity verified.') : h('b', {}, 'TAMPERING DETECTED.'),
+      a.chainIntact ? ' No entry has been changed or removed.' : ' The hash chain is broken. Restore from a verified backup (npm run restore).'));
+    $('au-list').replaceChildren(...a.entries.map(e => h('div', { class: 'ev ' + evClass(e.event) }, h('time', { title: e.ts }, new Date(e.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })), h('span', { class: 'tag' }, e.event), h('span', { style: 'color:var(--mut)' }, e.user === '-' ? '' : 'by ' + e.user))));
+  } catch (e) { toast(e.message, 'bad'); }
+}
+$('b-backup').onclick = () => submit($('b-backup'), async () => { await api('/api/admin/backup', 'POST'); toast('Backup saved (signed with HMAC)', 'ok'); loadAudit(); });
+
+/* ---------- start ---------- */
+(async () => { try { me = await api('/api/me'); } catch { me = null; } render(location.hash.slice(1)); })();
+</script>
+</body>
+</html>
